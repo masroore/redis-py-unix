@@ -46,12 +46,17 @@ class Connection(object):
         if self._sock:
             return
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.host, self.port))
+            if self.port == 0:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(self.host)
+            else:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect((self.host, self.port))
         except socket.error, e:
             raise ConnectionError("Error %s connecting to %s:%s. %s." % \
                 (e.args[0], self.host, self.port, e.args[1]))
-        sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+        if self.port > 0:
+            sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         sock.settimeout(self.socket_timeout)
         self._sock = sock
         self._fp = sock.makefile('r')
